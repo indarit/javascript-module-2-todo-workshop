@@ -1,15 +1,37 @@
-
-//Ejercicio 10
+// VARIABLES
 let todos = [];
-
-const createTodo = (text) => {
-  todos.push(text);
+const filters = {
+  searchTitle: "",
+  showFinished: false,
+  showUnfinished: false,
 };
 
-;
+// FUNCIONES
+const createTodo = (text) => {
+  const todo = {
+    title: text,
+    completed: false,
+  };
+  todos.push(todo);
+  saveTodosToLocalStorage();
+};
+const generateTodoDOM = (todoObj) => {
+  const todoEl = document.createElement("label");
+  const containerEl = document.createElement("div");
+  const todoText = document.createElement("span");
+
+  // Setup todo checkbox
+  const checkbox = document.createElement("input");
+  checkbox.setAttribute("type", "checkbox");
+  checkbox.checked = todoObj.completed;
+  containerEl.appendChild(checkbox);
+  checkbox.addEventListener("change", () => {
+    toggleTodo(todoObj.title);
+    renderTodos();
+  });
 
   // Setup the todo text
-  todoText.textContent = todo;
+  todoText.textContent = todoObj.title;
   containerEl.appendChild(todoText);
 
   // Setup container
@@ -23,22 +45,50 @@ const createTodo = (text) => {
   removeButton.classList.add("button", "button--text");
   todoEl.appendChild(removeButton);
   removeButton.addEventListener("click", () => {
-    removeTodo(todoText);
-    renderTodos(todos);
+    removeTodo(todoObj.title);
+    renderTodos();
   });
 
-  return todoEl;const generateTodoDOM = (todo) => {
-  const todoEl = document.createElement("label");
-  const containerEl = document.createElement("div");
-  const todoText = document.createElement("span")
+  return todoEl;
 };
+const toggleTodo = (title) => {
+  const todo = todos.find(
+    (todo) => todo.title.toLowerCase() === title.toLowerCase()
+  );
 
-const renderTodos = (todos) => {
+  if (todo) {
+    todo.completed = !todo.completed;
+  }
+  saveTodosToLocalStorage();
+};
+const removeTodo = (title) => {
+  const todoIndex = todos.findIndex(
+    (todo) => todo.title.toLowerCase() === title.toLowerCase()
+  );
+
+  if (todoIndex > -1) {
+    todos.splice(todoIndex, 1);
+  }
+  saveTodosToLocalStorage();
+};
+const renderTodos = () => {
+  // filtered Todos
+  let filteredTodos = todos.filter((todo) =>
+    todo.title.toLowerCase().includes(filters.searchTitle.toLowerCase())
+  );
+  if (filters.showFinished && filters.showUnfinished) {
+    // do nothing
+  } else if (filters.showFinished) {
+    filteredTodos = filteredTodos.filter((todo) => todo.completed);
+  } else if (filters.showUnfinished) {
+    filteredTodos = filteredTodos.filter((todo) => !todo.completed);
+  }
+
   const todoList = document.querySelector("#todos");
   todoList.innerHTML = "";
 
-  if (todos.length > 0) {
-    todos.forEach((todo) => {
+  if (filteredTodos.length > 0) {
+    filteredTodos.forEach((todo) => {
       todoList.appendChild(generateTodoDOM(todo));
     });
   } else {
@@ -48,17 +98,21 @@ const renderTodos = (todos) => {
     todoList.appendChild(messageEl);
   }
 };
+const saveTodosToLocalStorage = () => {
+  window.localStorage.setItem("todos", JSON.stringify(todos));
+};
+const fetchTodosFromLocalStorage = () => {
+  const todosJSON = window.localStorage.getItem("todos");
 
-const removeTodo = (todoEl) => {
-  const todoIndex = todos.findIndex((todo) => {
-    return todo.toLowerCase() === todoEl.textContent.toLowerCase();
-  });
-  if (todoIndex > -1) {
-    todos.splice(todoIndex, 1);
+  if (todosJSON) {
+    todos = JSON.parse(todosJSON);
+  } else {
+    todos = [];
   }
 };
 
-document.querySelector("#new-todo").addEventListener("submit", (e) => {
+// EVENTOS - FUNCIONES
+const onSubmit = (e) => {
   e.preventDefault();
   const text = e.target.elements.text.value.trim();
 
@@ -66,52 +120,40 @@ document.querySelector("#new-todo").addEventListener("submit", (e) => {
     createTodo(text);
     e.target.elements.text.value = "";
   }
-  renderTodos(todos);
-});
-renderTodos(todos);
+  renderTodos();
+};
+const onInput = (e) => {
+  filters.searchTitle = e.target.value;
+  renderTodos();
+};
+const onFinishedCheckChange = (e) => {
+  filters.showFinished = e.target.checked;
+  renderTodos();
+};
+const onUnfinishedCheckChange = (e) => {
+  filters.showUnfinished = e.target.checked;
+  renderTodos();
+};
+const onStorageChange = (e) => {
+  if (e.key === "todos") {
+    fetchTodosFromLocalStorage();
+    renderTodos();
+  }
+};
 
-// Ejercicios 11
-const createTodo = (text) => {
-    todos.push({
-        title: text,
-        completed: false
-    })
-}
+// DOM - ELEMENTOS
+const formulario = document.querySelector("#new-todo");
+const searchText = document.querySelector("#search-text");
+const finishedCheck = document.querySelector("#show-finished");
+const unfinishedCheck = document.querySelector("#show-unfinished");
 
-// Ejercicio 12
-const generateTodoDOM = (todoObj) => {
-    const todoEl = document.createElement('label')
-    const containerEl = document.createElement('div')
-    const todoText = document.createElement('span')
+// EVENTOS - LINKS
+formulario.addEventListener("submit", onSubmit);
+searchText.addEventListener("input", onInput);
+finishedCheck.addEventListener("change", onFinishedCheckChange);
+unfinishedCheck.addEventListener("change", onUnfinishedCheckChange);
+window.addEventListener("storage", onStorageChange);
 
-    // Setup todo checkbox
-    const checkbox = document.createElement('input')
-    checkbox.setAttribute('type', 'checkbox')
-    checkbox.checked = todoObj.completed
-    containerEl.appendChild(checkbox)
-    checkbox.addEventListener('change', () => {
-        toggleTodo(todoObj.title)
-        renderTodos(todos)
-    })
-
-    // Setup the todo text
-    todoText.textContent = todoObj.title
-    containerEl.appendChild(todoText)
-
-    // Setup container
-    todoEl.classList.add('list-item')
-    containerEl.classList.add('list-item__container')
-    todoEl.appendChild(containerEl)
-
-    // Setup the remove button
-    const removeButton = document.createElement('button')
-    removeButton.textContent = 'remove'
-    removeButton.classList.add('button', 'button--text')
-    todoEl.appendChild(removeButton)
-    removeButton.addEventListener('click', () => {
-        removeTodo(todoObj.title)
-        renderTodos(todos)
-    })
-
-    return todoEl
-}
+// SCRIPT
+fetchTodosFromLocalStorage();
+renderTodos();
